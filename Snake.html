@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Document</title>
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+                cursor: default;
+                -webkit-user-select: none;
+            }
+
+            #main {
+                width: 360px;
+                height: 420px;
+                border: 10px #000 solid;
+                background-color: #b7d4a8;
+                border-radius: 20px;
+                margin: 50px auto;
+            }
+
+            #stage {
+                width: 304px;
+                height: 304px;
+                border: 2px solid #000;
+                margin: 20px auto;
+                position: relative;
+            }
+
+            #snake > div {
+                width: 10px;
+                height: 10px;
+                background-color: #000;
+                position: absolute;
+                border: 1px solid #b7d4a8;
+            }
+
+            #food {
+                width: 10px;
+                height: 10px;
+                position: absolute;
+                top: 100px;
+                left: 120px;
+                display: flex;
+                flex-flow: row;
+                flex-wrap: wrap;
+            }
+
+            #food > div {
+                width: 5px;
+                height: 5px;
+                background-color: #000;
+                transform: rotate(45deg);
+            }
+
+            #info {
+                width: 304px;
+                margin: 0px auto;
+                display: flex;
+                justify-content: space-between;
+                font: bold 20px courier;
+            }
+        </style>
+    </head>
+
+    <body>
+        <div id="main">
+            <div id="stage">
+                <div id="snake">
+                    <div></div>
+                </div>
+                <div id="food">
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                </div>
+            </div>
+            <div id="info">
+                <div>SCORE:<span id="score">0</span></div>
+                <div>LEVEL:<span id="level">1</span></div>
+            </div>
+        </div>
+
+        <script>
+            // Get snake container
+            const snake = document.getElementById("snake");
+            // Get each part of snake
+            const snakes = snake.getElementsByTagName("div");
+
+            // Get food element
+            const food = document.getElementById("food");
+
+            // Get Score and level element
+            const scoreSpan = document.getElementById("score");
+            const levelSpan = document.getElementById("level");
+            // Variables for saving score and level
+            let score = 0;
+            let level = 0;
+
+            /*
+                            The position of food need between 0 to 290px and should be multiples of 10.
+                        */
+            function changeFood() {
+                /*
+                                Generate two random numbers for position x and y, and they will between 0 to 29,
+                                and multiply each of them by 10, make sure they definitely are multiples of 10
+                            */
+                const x = Math.floor(Math.random() * 30) * 10;
+                const y = Math.floor(Math.random() * 30) * 10;
+
+                // Set food position
+                food.style.left = x + "px";
+                food.style.top = y + "px";
+            }
+            //changeFood();
+
+            // Snake move direction
+            let dir;
+
+            // Create a variable for key's status
+            let keyActive = true;
+
+            /*
+                            Bind press key event (keydown, keyup),
+                            keyboard event only can bind on document or element that it can be focus.
+                        */
+            // Keys for decide direction
+            const keyArray = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"];
+
+            // Create a object
+            const reObj = {
+                ArrowUp: "ArrowDown",
+                ArrowDown: "ArrowUp",
+                ArrowLeft: "ArrowRight",
+                ArrowRight: "ArrowLeft",
+            };
+            /*
+                            The following conditions will make snake into turn back event:
+                                1. When hole snake(include head) length greater then 2
+                                2. This time's direction can't be the opposite of previous direction
+                            When turn back event happen, how to solve:
+                                Don't change direction, keep present direction(dir not change)
+                        */
+            document.addEventListener("keydown", (event) => {
+                if (keyActive && keyArray.includes(event.key)) {
+                    // Check the snake is in the turn back event or not
+                    if (snakes.length < 2 || reObj[dir] != event.key) {
+                        // Set dir to the direction that event key represent
+                        dir = event.key;
+                        keyActive = false;
+                    } else {
+                        // Decide the snake change direction or not
+                        /*
+                                        When the code run to here means the condition(if (snake.length < 2)) isn't met,
+                                        so the dir still have the previous direction, and we can use it to check event key is opposite or not.
+
+                                        In here all if conditions set to not raise snake turn back event.
+                                    */
+                        /*
+                                    if (dir === "ArrowUp" && event.key !== "ArrowDown") {
+                                        dir = event.key;
+                                    } else if (dir === "ArrowDown" && event.key !== "ArrowUp") {
+                                        dir = event.key;
+                                    } else if (dir === "ArrowLeft" && event.key !== "ArrowRight") {
+                                        dir = event.key;
+                                    } else if (dir === "ArrowRight" && event.key !== "ArrowLeft") {
+                                        dir = event.key;
+                                    }
+                                    */
+                    }
+                }
+            });
+
+            /*
+                            To make the snake looks like its moving, just needs when snake moving,
+                            move the tail(last part of snake) to the next expected position of head.
+                        */
+            // Game over status
+            let isGameOver = false;
+
+            setTimeout(function move() {
+                // Release key status to true
+                keyActive = true;
+
+                // Get snake's head from snake element
+                const head = snakes[0];
+
+                // Get the position of snake head
+                let x = head.offsetLeft;
+                let y = head.offsetTop;
+
+                switch (dir) {
+                    case "ArrowUp":
+                        //console.log("↑");
+                        y -= 10;
+                        break;
+                    case "ArrowDown":
+                        //console.log("↓");
+                        y += 10;
+                        break;
+                    case "ArrowLeft":
+                        //console.log("←");
+                        x -= 10;
+                        break;
+                    case "ArrowRight":
+                        //console.log("→");
+                        x += 10;
+                        break;
+                }
+                // Check the snake get food or not
+                if (head.offsetTop === food.offsetTop && head.offsetLeft === food.offsetLeft) {
+                    // Change food position
+                    changeFood();
+                    // Add a part of body to snake
+                    snake.insertAdjacentHTML("beforeend", "<div/>");
+                    score++;
+                    scoreSpan.textContent = score;
+
+                    // Check level
+                    if (score % 3 === 0 && level < 14) {
+                        level++;
+                        levelSpan.textContent = level + 1;
+                    }
+                }
+
+                /*
+                                Game over when:
+                                    1. Hit wall
+                                    2. Hit itself's body
+                            */
+                // Hit wall
+                if (x < 0 || x > 290 || y < 0 || y > 290) {
+                    alert("Oops! Game over");
+                    return;
+                }
+
+                // Hit itself's body(Don't need to check tail's position because it will change position immediately)
+                for (let i = 0; i < snakes.length - 1; i++) {
+                    if (snakes[i].offsetLeft === x && snakes[i].offsetTop === y) {
+                        alert("Oops! Hit body");
+                        return;
+                    }
+                }
+
+                // Move the snake's position (Remember actually we move the tail not head)
+                // Get the position of tail
+                const tail = snakes[snakes.length - 1];
+                tail.style.left = x + "px";
+                tail.style.top = y + "px";
+                // Not only edit tail's css position, the div in html code's position also needs to change
+                // So the tail become new head now
+                snake.insertAdjacentElement("afterbegin", tail);
+
+                setTimeout(move, 300 - level * 20);
+            }, 300);
+        </script>
+    </body>
+</html>
